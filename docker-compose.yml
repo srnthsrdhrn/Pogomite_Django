@@ -1,0 +1,48 @@
+web:
+  restart: always
+  build: .
+  ports:
+    - 8000:8000
+  expose:
+    - 8000
+  volumes:
+    - pogomite_media:/usr/src/app/media/
+  env_file: production.env
+  links:
+    - postgres:postgres
+    - redis:redis
+  command: sh '/usr/src/app/run_web.sh'
+postgres:
+  restart: always
+  image: postgres:latest
+  env_file: production.env
+  ports:
+    - "5432:5432"
+  volumes:
+    - pogomitepgdata:/var/lib/postgresqql/data/
+
+redis:
+  restart: always
+  image: redis:latest
+  expose:
+    - 6379
+
+worker:
+  restart: always
+  env_file: production.env
+  build: .
+  volumes:
+    - pogomite_media:/usr/src/app/media/
+  links:
+    - postgres:postgres
+    - redis:redis
+  command: sh '/usr/src/app/run_celery.sh'
+flower:
+  restart: always
+  build: .
+  env_file: production.env
+  links:
+    - redis:redis
+  ports:
+   - "5555:5555"
+  command: sh '/usr/src/app/run_flower.sh'
